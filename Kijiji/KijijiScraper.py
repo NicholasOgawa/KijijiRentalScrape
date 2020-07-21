@@ -35,11 +35,8 @@ class KijijiListings():
     
     def indhousedata(self):
         for link in self.listings:
-            
             driver.get(link)
-    
             id_ = link[-10:]
-    
             titleList = driver.find_elements_by_class_name('title-2323565163')
             
             try:
@@ -49,9 +46,8 @@ class KijijiListings():
             except NoSuchElementException:
                 date = None
                 
-    
-            if not titleList[0].text:
-                title = titleList[1].text
+                if not titleList[0].text:
+                    title = titleList[1].text
 
             else:
                 title = titleList[0].text
@@ -174,6 +170,6 @@ class KijijiScraper(KijijiListings):
         
 if __name__ = '__main__':
     scraper = KijijiScraper(url = 'https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/c37l1700287a27949001',
-                           host = "localhost", user = "root", password = 'nomochan1', database = 'kijijidb',
-                            tablename= 'rental4')
+                           host = "localhost", user = "root", password = '', database = 'db',
+                            tablename= 'rental')
     scraper.StartScrape()
