@@ -6,24 +6,54 @@ Scraping housing data from Kijiji and storing it into an MySQL table. Allows for
 
 Dependencies: selenium, requests, bs4, re, MySQL
 
-'''bash
-pip install requests bs4 re selenium pandas
-'''
+```bash
 
-Link to installing [ChomeDriver](https://chromedriver.storage.googleapis.com/index.html?path=84.0.4147.30/)
+pip install requests bs4 regex selenium
+```
+
+
+Install [ChomeDriver](https://chromedriver.storage.googleapis.com/index.html?path=84.0.4147.30/)
+
+###  MySQL installation
+1. Install [MySQL](https://dev.mysql.com/downloads/mysql/)
+
+ 
+2. via CLI: Accessing as a root user  & Write in the password below
+```bash
+$ mysql -u root -p
+Enter password: 
+```
+ii) If everything goes accordingly, this is what to to expect
+```bash
+Welcome to the MySQL monitor.  Commands end with ;
+...
+mysql> 
+```
+iii) Create & Use database:
+```
+mysql> CREATE DATABASE kijijidb;
+mysql> USE kijijidb;
+```
+
+iv) After running the KijijiScraper, run query
+```bash
+mysql> select * from VancouverRentals;
+```
+
 
 ## Usage 
 
-'''python
+
+```python
 import KijijiScraper
  
 Scraper = KijijiScraper.Scrape('https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/c37l1700287a27949001', host= 'localhost', user= 'root',
-password = 'password', database = 'db', table = 'VancouverRentals')
+password = 'password', database = 'kijijidb', table = 'VancouverRentals')
 
-Scraper.createtable() #Only done once
+Scraper.createtable() #Execute only once for each KijijiScraper Object
 
 Scraper.StartScrape() #Takes link and will add all current houses to SQL table
-'''
+```
 
 
 
