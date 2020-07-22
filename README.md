@@ -50,14 +50,15 @@ import KijijiScraper
 Scraper = KijijiScraper.Scrape('https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/c37l1700287a27949001', host= 'localhost', user= 'root',
 password = 'password', database = 'kijijidb', table = 'VancouverRentals')
 
-Scraper.createtable() #Execute only once for each KijijiScraper Objec, in this example a table named VancouverRentals will be created
+Scraper.createtable() #Execute only once for each KijijiScraper Object, in this example a table named VancouverRentals will be created
 
 Scraper.StartScrape() #Takes link and will add all current houses to SQL table. 
 
 ```
 
-### Future Improvements
-- Remove BeautifulSoup and Request dependencie since it is only used for 1 method.
+## Future Improvements
+
+- Remove BeautifulSoup and Request dependencies since it is only used for 1 method.
 
 - Pandas Dataframe cleaning and analysis.
 
