@@ -2,7 +2,6 @@ from selenium import webdriver
 import requests
 from bs4 import BeautifulSoup
 import re
-import logging
 import mysql.connector
 
 driver = webdriver.Chrome()
@@ -10,11 +9,24 @@ driver = webdriver.Chrome()
 
 class KijijiListings:
     def __init__(self, url):
+       
+        '''
+        url - 1st page of url desired to scrape
+        allUrls - Each individual rental listing on Kijiji in list form. To specify, it is a list of lists. The inner list contains information on the unit.
+        listings- Each inidividual rentual unit's url. If you scrape 3 pages, this will return approximately 120 pages. (Variation due to ads and duplicates)
+        '''
+        
         self.url = url
         self.listings = []
         self.allUrls = []
 
-    def get_listings(self, url, pages):
+    def get_listings(self, url, pages = 7):
+        '''
+        url- Url is the first page of the Kijiji website, for example. I used "https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001"
+        for my first page. 
+        
+        pages- How many pages you want to scrape. 
+        '''
         link = re.findall(r"(?:[^/]|//)+", url)
         baseurl = link[0]
         urlprefix, urlsuffix = "/".join(link[:-1]), link[-1]
@@ -36,6 +48,9 @@ class KijijiListings:
                 self.listings.append(requestpt2)
 
     def indhousedata(self):
+        '''
+        Function scrapes each individual link, extracting the relevant data
+        '''
         for link in self.listings:
             driver.get(link)
             id_ = link[-10:]
@@ -132,6 +147,7 @@ class KijijiListings:
 
 
 class SQLInitializaion:
+    '''Class iniitializes SQL database''''
     def __init__(self, host, user, password, database):
         self.host = host
         self.user = user
@@ -144,16 +160,21 @@ class SQLInitializaion:
             database=self.database,
         )
 
-        logging.info(f"Initalized MySQL")
-
 
 class KijijiScraper(KijijiListings):
+    ''' This class allows the scraping to occur'''
     def __init__(self, url, host, user, password, database, tablename):
+        '''
+        
+        '''
         super().__init__(url)
         self.SQLconnection = SQLInitializaion(host, user, password, database)
         self.tablename = tablename
 
     def createtable(self):
+        '''
+        Only call this function once. It is creating the table. 
+        '''
         cursor = self.SQLconnection.conn.cursor()
         creation = f"""
                 CREATE TABLE {self.tablename} 
@@ -169,10 +190,12 @@ class KijijiScraper(KijijiListings):
         self.SQLconnection.conn.close()
 
     def listToSQL(self):
+        '''
+        All lists in allUrls to be stored in SQL table 
+        '''
         conn = self.SQLconnection.conn
         cursor = self.SQLconnection.conn.cursor()
-        logging.info(f"Inserting rows into {self.tablename}")
-
+        
         stmt = f"""
           INSERT INTO {self.tablename} 
           (id, title, date, price,
@@ -187,13 +210,16 @@ class KijijiScraper(KijijiListings):
         cursor.executemany(stmt, self.allUrls)
         conn.commit()
         conn.close()
-
+        
     def StartScrape(self):
-        self.get_listings(self.url, 7)
+        self.get_listings(self.url)
         self.indhousedata()
         self.listToSQL()
 
     def ConvertToPandas(self):
+        '''
+        Optional: If you want to conduct a greater analyses on the data. This function will create a dataframe
+        '''
         conn = self.SQLconnection.conn
         cursor = self.SQLconnection.conn.cursor()
         cursor.execute(f"SELECT * FROM {self.tablename}")
@@ -220,3 +246,8 @@ class KijijiScraper(KijijiListings):
         conn.close()
 
         return df
+    
+if __name__ = '__main__':
+    scraper = KijijiScraper(url, host, user, password, database, tablename) #Insert your values
+    scraper.StartScrape() #Insert first page of Url. Ie https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001
+    
