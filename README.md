@@ -52,7 +52,9 @@ password = 'password', database = 'kijijidb', table = 'VancouverRentals')
 
 Scraper.createtable() #Execute only once for each KijijiScraper Object, in this example a table named VancouverRentals will be created
 
-Scraper.StartScrape() #Takes link and will add all current houses to SQL table. 
+Scraper.ScrapeInit() #Takes link and will add all current posted rentals to SQL table. 
+
+Scraper.ScrapeUpdate(2) #Retrieving a limited amount of postings based on requested Kijiji pages. In this example, it is 2 pages
 
 ```
 
