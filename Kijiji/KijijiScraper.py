@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -9,22 +10,19 @@ driver = webdriver.Chrome()
 
 class KijijiListings:
     def __init__(self, url):
-       
         '''
         url - 1st page of url desired to scrape
         allUrls - Each individual rental listing on Kijiji in list form. To specify, it is a list of lists. The inner list contains information on the unit.
         listings- Each inidividual rentual unit's url. If you scrape 3 pages, this will return approximately 120 pages. (Variation due to ads and duplicates)
         '''
-        
         self.url = url
         self.listings = []
         self.allUrls = []
 
-    def get_listings(self, url, pages = 7):
+    def get_listings(self, url, pages=1):
         '''
-        url- Url is the first page of the Kijiji website, for example. I used "https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001"
+        url- Url is the first page of the Kijiji website, for example. I use "https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001"
         for my first page. 
-        
         pages- How many pages you want to scrape. 
         '''
         link = re.findall(r"(?:[^/]|//)+", url)
@@ -40,51 +38,59 @@ class KijijiListings:
             listingdivs = soup.select("a[class*=title]")
             page_no += 1
 
-            for i in range(
-                len(listingdivs)
-            ):  # Retrieving all the links from each kijiji listing page
+            for i in range(len(listingdivs)):  # Retrieving all the links from each kijiji listing page
                 propsuffix = listingdivs[i]["href"]
                 requestpt2 = f"{baseurl}{propsuffix}"
                 self.listings.append(requestpt2)
 
     def indhousedata(self):
         '''
-        Function scrapes each individual link, extracting the relevant data
+        Function scrapes each individual link, extracting the relevant and available data 
         '''
         for link in self.listings:
             driver.get(link)
             id_ = link[-10:]
-            titleList = driver.find_elements_by_class_name("title-2323565163")
 
             try:
                 date_time = driver.find_element_by_tag_name("time").get_attribute(
                     "datetime"
                 )
                 date = re.match(r"[^A-Z]*", date_time).group(0)
-
             except NoSuchElementException:
                 date = None
 
-            if not titleList[0].text:
-                title = titleList[1].text
-
+            try: 
+                titleList = driver.find_elements_by_class_name("title-2323565163")
+                titleList[0].text
+              
+            except IndexError:
+                title = None
             else:
-                title = titleList[0].text
-
-            addlen = driver.find_elements_by_class_name("address-3617944557")
-
-            if len(addlen) is 1:
-                address = (
-                    driver.find_elements_by_class_name("address-3617944557")[0]
-                    .text.replace(",", "")
-                    .strip()
-                )
+                if not titleList[0].text:
+                    title = titleList[1].text
+                else:
+                    title = titleList[0].text
+                    
+                    
+            try:
+                addlen = driver.find_elements_by_class_name("address-3617944557")
+                addlen[0]
+            except IndexError:
+                address = None
             else:
-                address = (
-                    driver.find_elements_by_class_name("address-3617944557")[1]
-                    .text.replace(",", "")
-                    .strip()
-                )
+                if len(addlen) is 1:
+                    address = (
+                        driver.find_elements_by_class_name("address-3617944557")[0]
+                        .text.replace(",", "")
+                        .strip()
+                    )
+                    
+                else:
+                    address = (
+                        driver.find_elements_by_class_name("address-3617944557")[1]
+                        .text.replace(",", "")
+                        .strip()
+                    )
 
             data = (
                 driver.find_element_by_id("vip-body")
@@ -97,9 +103,7 @@ class KijijiListings:
             for character in replacechar:
                 data = data.replace(character, "")
 
-            data = data.split(
-                "View Map Posted"
-            )  # This obscure line here is for 1 reason, since we are using Regex to scrape the data. We need to ensure the Regex does not retrieve information from the title
+            data = data.split("View Map Posted")  # This obscure line here is for 1 reason, since we are using Regex to scrape the data. We need to ensure the Regex does not retrieve information from the title
 
             try:
                 price = re.search(r"Price (\d+)", data[0]).group(1)
@@ -123,6 +127,8 @@ class KijijiListings:
 
             try:
                 sqft = re.search(r" The Unit Size sqft (\d+)", data[1]).group(1)
+                if sqft < 100: #Kijiji User may add entry of '1' which effects analysis
+                    sqft = None
             except AttributeError:
                 sqft = None
 
@@ -145,9 +151,8 @@ class KijijiListings:
                 ]
             )
 
-
 class SQLInitializaion:
-    '''Class iniitializes SQL database''''
+    '''Class iniitializes SQL database'''
     def __init__(self, host, user, password, database):
         self.host = host
         self.user = user
@@ -160,13 +165,8 @@ class SQLInitializaion:
             database=self.database,
         )
 
-
 class KijijiScraper(KijijiListings):
-    ''' This class allows the scraping to occur'''
     def __init__(self, url, host, user, password, database, tablename):
-        '''
-        
-        '''
         super().__init__(url)
         self.SQLconnection = SQLInitializaion(host, user, password, database)
         self.tablename = tablename
@@ -195,7 +195,7 @@ class KijijiScraper(KijijiListings):
         '''
         conn = self.SQLconnection.conn
         cursor = self.SQLconnection.conn.cursor()
-        
+
         stmt = f"""
           INSERT INTO {self.tablename} 
           (id, title, date, price,
@@ -210,16 +210,25 @@ class KijijiScraper(KijijiListings):
         cursor.executemany(stmt, self.allUrls)
         conn.commit()
         conn.close()
+
+    def ScrapeInit(self):
+        ''' 
+        Initial scrape retrieving several pages and hundreds of rental postings
+        ''' 
         
-    def StartScrape(self):
-        self.get_listings(self.url)
+        self.get_listings(self.url, 6)
+        self.indhousedata()
+        self.listToSQL()
+        
+    def ScrapeUpdate(self, pages = 1):
+        ''' 
+        Update scrape retrieving one page, approximately 40-50 of the most recent postings. 
+        ''' 
+        self.get_listings(self.url, pages)
         self.indhousedata()
         self.listToSQL()
 
     def ConvertToPandas(self):
-        '''
-        Optional: If you want to conduct a greater analyses on the data. This function will create a dataframe
-        '''
         conn = self.SQLconnection.conn
         cursor = self.SQLconnection.conn.cursor()
         cursor.execute(f"SELECT * FROM {self.tablename}")
