@@ -2,6 +2,11 @@
 
 Scraping housing data from Kijiji and storing it into an MySQL table. Allows for refinable house features. For example, if you are only looking for a 1-bedroom apartment or a furnished basement, just put in the link to the first page of whatever specifications you have created via Kijiji and the table will only pull links which meet the requirement.
 
+# ScraperInAction: 
+A notebook is also posted but here is an nbviewer to show Folium plotting.
+
+https://nbviewer.jupyter.org/github/nogawa3/KijijiRentalScrape/blob/master/ScraperInAction.ipynb
+
 ## Prerequisites
 
 Dependencies: selenium, requests, bs4, re, MySQL
