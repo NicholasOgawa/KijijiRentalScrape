@@ -258,5 +258,5 @@ class KijijiScraper(KijijiListings):
     
 if __name__ = '__main__':
     scraper = KijijiScraper(url, host, user, password, database, tablename) #Insert your values
-    scraper.StartScrape() #Insert first page of Url. Ie https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001
+    scraper.ScrapeInit() #Insert first page of Url. Ie https://www.kijiji.ca/b-apartments-condos/vancouver/1+bedroom/page-1/c37l1700287a27949001
     
