@@ -127,7 +127,8 @@ class KijijiListings:
 
             try:
                 sqft = re.search(r" The Unit Size sqft (\d+)", data[1]).group(1)
-                if sqft < 100: #Kijiji User may add entry of '1' which effects analysis
+                sqft = int(sqft) #Regex reads as string
+                if sqft < 50:
                     sqft = None
             except AttributeError:
                 sqft = None
